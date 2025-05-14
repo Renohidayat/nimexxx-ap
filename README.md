@@ -73,4 +73,4 @@ example : https://otakudesu-anime-api.vercel.app/api/v1/genres
 ```
 /api/v1/genres/[genre]/[page]
 ```
-example : https://otakudesu-anime-api.vercel.app/api/v1/genres/action/1
+example : https://otakudesu-anime-api.vercel.app/api/v1/genres/action/1# API
