@@ -5,7 +5,9 @@ const fetch = require("node-fetch");
 
 // Root endpoint info
 router.get("/", (req, res) => {
+    console.log("Root endpoint accessed");
     res.send({
+        message: "API is running",
         endpoint: {
             getOngoingAnime: "/api/v1/ongoing/:page",
             getCompletedAnime: "/api/v1/completed/:page",
@@ -33,7 +35,7 @@ router.get("/api/v1/proxy-image", async (req, res) => {
         res.set("Content-Type", response.headers.get("content-type"));
         response.body.pipe(res);
     } catch (error) {
-        console.error(error);
+        console.error("Error in proxy-image:", error.message);
         res.status(500).send("Internal server error");
     }
 });
