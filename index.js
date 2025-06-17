@@ -8,7 +8,8 @@ inject();
 
 app.use(cors());
 app.use(route)
-const port = process.env.port || 8000;
+const port = process.env.PORT || 8000;
+
 
 app.listen(port, () => {
     try {
