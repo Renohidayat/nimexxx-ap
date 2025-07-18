@@ -20,7 +20,7 @@
     "express": "^4.17.1",
     "node-fetch": "^2.7.0",
     "nodemon": "^2.0.20",
-    "puppeteer": "^19.2.2",
+    "puppeteer": "^19.11.1",
     "qs": "^6.11.0"
   }
 }
