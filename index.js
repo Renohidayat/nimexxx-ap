@@ -1,28 +1,26 @@
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 const app = express();
 const route = require("./src/router/route");
-const { inject } = require("@vercel/analytics");
 
-inject();  
+app.use(cors());
+app.use(express.json());
+app.use(route);
 
-app.use(cors());  // Izinkan CORS secara global
-app.use(route);   // Gunakan route dari file router
-
-// Penanganan error global (optional)
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).send('Something went wrong!');
+  res.status(500).json({ status: false, message: "Something went wrong!" });
 });
 
-// Penanganan route yang tidak dikenal
-app.all('*', (req, res) => {
-  res.status(404).json({ message: 'Not Found' });
+// 404 handler
+app.all("*", (req, res) => {
+  res.status(404).json({ status: false, message: "Endpoint Not Found" });
 });
 
-// Tentukan port dan jalankan server
 const port = process.env.PORT || 8000;
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`✅ Server running on http://localhost:${port}`);
 });
 
+module.exports = app;
