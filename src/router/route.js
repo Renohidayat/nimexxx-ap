@@ -24,7 +24,7 @@ router.get("/", (req, res) => {
 });
 
 // Proxy image
-router.get("/api/v1/proxy-image", async (req, res) => {
+router.get("/v1/proxy-image", async (req, res) => {
     try {
         const imageUrl = req.query.url;
         if (!imageUrl) return res.status(400).send("Missing url param");
@@ -41,15 +41,15 @@ router.get("/api/v1/proxy-image", async (req, res) => {
 });
 
 // API routes
-router.get("/api/v1/ongoing/:page", Services.getOngoing);
-router.get("/api/v1/completed/:page", Services.getCompleted);
-router.get("/api/v1/search/:q", Services.getSearch);
-router.get("/api/v1/anime-list", Services.getAnimeList);
-router.get("/api/v1/detail/:endpoint", Services.getAnimeDetail);
-router.get("/api/v1/episode/:endpoint", Services.getAnimeEpisode);
-router.get("/api/v1/batch/:endpoint", Services.getBatchLink);
-router.get("/api/v1/genres", Services.getGenreList);
-router.get("/api/v1/genres/:genre/:page", Services.getGenrePage);
-router.get("/api/v1/streaming/:content", Services.getEmbedByContent);
+router.get("/v1/ongoing/:page", Services.getOngoing);
+router.get("/v1/completed/:page", Services.getCompleted);
+router.get("/v1/search/:q", Services.getSearch);
+router.get("/v1/anime-list", Services.getAnimeList);
+router.get("/v1/detail/:endpoint", Services.getAnimeDetail);
+router.get("/v1/episode/:endpoint", Services.getAnimeEpisode);
+router.get("/v1/batch/:endpoint", Services.getBatchLink);
+router.get("/v1/genres", Services.getGenreList);
+router.get("/v1/genres/:genre/:page", Services.getGenrePage);
+router.get("/v1/streaming/:content", Services.getEmbedByContent);
 
 module.exports = router;
