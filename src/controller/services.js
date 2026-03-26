@@ -1,363 +1,486 @@
-const services = require("../helper/sevice");
-const cheerio = require("cheerio");
-const baseUrl = require("../constant/url");
-const episodeHelper = require("../helper/episodeHelper");
+const services = require("../helper/sevice")
+const cheerio = require("cheerio")
+const baseUrl = require("../constant/url")
+const episodeHelper = require("../helper/episodeHelper")
 
 const Services = {
-  // GET /api/v1/ongoing/:page
-  getOngoing: async (req, res) => {
-    const page = req.params.page;
-    const url =
-      page == 1
-        ? `${baseUrl}/ongoing-anime/`
-        : `${baseUrl}/ongoing-anime/page/${page}/`;
-
-    try {
-      const response = await services.fetchService(url, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const ongoing = [];
-
-      $(".listupd article.bs").each((i, el) => {
-        const href = $(el).find("a").attr("href") || "";
-        ongoing.push({
-          title: $(el).find(".tt h2").text().trim() || $(el).find("a").attr("title"),
-          thumb: $(el).find("img").attr("src"),
-          total_episode: $(el).find(".epx").text().trim(),
-          endpoint: href.replace(`${baseUrl}/series/`, "").replace(/\//g, ""),
-        });
-      });
-
-      return res.status(200).json({ status: true, message: "success", ongoing, currentPage: page });
-    } catch (error) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: error.message, ongoing: [] });
-    }
-  },
-
-  // GET /api/v1/completed/:page
-  getCompleted: async (req, res) => {
-    const page = req.params.page;
-    const url =
-      page == 1
-        ? `${baseUrl}/complete-anime/`
-        : `${baseUrl}/complete-anime/page/${page}/`;
-
-    try {
-      const response = await services.fetchService(url, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const completed = [];
-
-      $(".listupd article.bs").each((i, el) => {
-        const href = $(el).find("a").attr("href") || "";
-        completed.push({
-          title: $(el).find(".tt h2").text().trim() || $(el).find("a").attr("title"),
-          thumb: $(el).find("img").attr("src"),
-          total_episode: $(el).find(".epx").text().trim(),
-          endpoint: href.replace(`${baseUrl}/series/`, "").replace(/\//g, ""),
-        });
-      });
-
-      return res.status(200).json({ status: true, message: "success", completed, currentPage: page });
-    } catch (error) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: error.message, completed: [] });
-    }
-  },
-
-  // GET /api/v1/search/:q
-  getSearch: async (req, res) => {
-    const query = req.params.q;
-    const url = `${baseUrl}/?s=${query}&post_type=anime`;
-
-    try {
-      const response = await services.fetchService(url, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const search = [];
-
-      $(".listupd article.bs").each((i, el) => {
-        const href = $(el).find("a").attr("href") || "";
-        search.push({
-          title: $(el).find(".tt h2").text().trim() || $(el).find("a").attr("title"),
-          thumb: $(el).find("img").attr("src"),
-          endpoint: href.replace(`${baseUrl}/series/`, "").replace(/\//g, ""),
-        });
-      });
-
-      return res.status(200).json({ status: true, message: "success", search, query });
-    } catch (error) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: error.message, search: [] });
-    }
-  },
-
-  // GET /api/v1/anime-list
-  getAnimeList: async (req, res) => {
-    const url = `${baseUrl}/anime-list/`;
-
-    try {
-      const response = await services.fetchService(url, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const anime_list = [];
-
-      $(".soralist a.series").each((i, el) => {
-        const href = $(el).attr("href") || "";
-        const title = $(el).text().trim();
-        if (title) {
-          anime_list.push({
-            title,
-            endpoint: href.replace(`${baseUrl}/series/`, "").replace(/\//g, ""),
-          });
+    getOngoing: async (req, res) => {
+        const page = req.params.page
+        let url = page === 1 ? `${baseUrl}/ongoing-anime/` : `${baseUrl}/ongoing-anime/page/${page}/`
+        try {
+            const response = await services.fetchService(url, res)
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data)
+                const element = $(".rapi")
+                let ongoing = []
+                let title, thumb, total_episode, updated_on, updated_day, endpoint
+    
+                element.find("ul > li").each((index, el) => {
+                    title = $(el).find("h2").text().trim()
+                    thumb = $(el).find("img").attr("src")
+                    total_episode = $(el).find(".epz").text()
+                    updated_on = $(el).find(".newnime").text()
+                    updated_day = $(el).find(".epztipe").text()
+                    endpoint = $(el).find(".thumb > a").attr("href").replace(`${baseUrl}/anime/`, "").replace("/", "")
+    
+                    ongoing.push({
+                        title,
+                        thumb,
+                        total_episode,
+                        updated_on,
+                        updated_day,
+                        endpoint,
+                    })
+                })
+                return res.status(200).json({
+                    status: true,
+                    message: "success",
+                    ongoing,
+                    currentPage: page
+                })
+            }
+            return res.send({
+                message: response.status,
+                ongoing: [],
+            });
+        } catch (error) {
+            console.log(error);
+            res.send({
+                status: false,
+                message: error,
+                ongoing: [],
+            });
         }
-      });
+    },
+    getCompleted: async (req, res) => {
+        const page = req.params.page
+        let url = page === 1 ? `${baseUrl}/complete-anime/` : `${baseUrl}/complete-anime/page/${page}/`
+    
+        try {
+            const response = await services.fetchService(url, res)
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data)
+                const element = $(".rapi")
+                let completed = []
+                let title, thumb, total_episode, updated_on, score, endpoint
+    
+                element.find("ul > li").each((index, el) => {
+                    title = $(el).find("h2").text().trim()
+                    thumb = $(el).find("img").attr("src")
+                    total_episode = $(el).find(".epz").text()
+                    updated_on = $(el).find(".newnime").text()
+                    score = $(el).find(".epztipe").text().trim()
+                    endpoint = $(el).find(".thumb > a").attr("href").replace(`${baseUrl}/anime/`, "").replace("/", "")
+    
+                    completed.push({
+                        title,
+                        thumb,
+                        total_episode,
+                        updated_on,
+                        score,
+                        endpoint,
+                    })
+                })
+    
+                return res.status(200).json({
+                    status: true,
+                    message: "success",
+                    completed,
+                    currentPage: page
+                })
+            }
+            return res.send({
+                status: response.status,
+                completed: []
+            })
+        } catch (error) {
+            console.log(error)
+            res.send({
+                status: false,
+                message: error,
+                completed: [],
+            });
+        }
+    },
+    getSearch: async (req, res) => {
+        const query = req.params.q
+        let url = `${baseUrl}/?s=${query}&post_type=anime`
+        try {
+            const response = await services.fetchService(url, res)
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data)
+                const element = $(".page")
+                let search = []
+                let title, thumb, genres, status, rating, endpoint
+    
+                element.find("li").each((index, el) => {
+                    title = $(el).find("h2 > a").text()
+                    thumb = $(el).find("img").attr("src")
+                    genres = $(el).find(".set > a").text().match(/[A-Z][a-z]+/g)
+                    status = $(el).find(".set").text().match("Ongoing") || $(el).find(".set").text().match("Completed")
+                    rating = $(el).find(".set").text().replace(/^\D+/g, '') || null
+                    endpoint = $(el).find("h2 > a").attr("href").replace(`${baseUrl}/anime/`, "").replace("/", "")
+    
+                    search.push({
+                        title,
+                        thumb,
+                        genres,
+                        status,
+                        rating,
+                        endpoint,
+                    })
+                })
+                return res.status(200).json({
+                    status: true,
+                    message: "success",
+                    search,
+                    query
+                })
+            }
+            return res.send({
+                message: response.status,
+                search: [],
+            });
+        } catch (error) {
+            console.log(error);
+            res.send({
+                status: false,
+                message: error,
+                search: [],
+            });
+        }
+    },
+    getAnimeList: async (req, res) => {
+        let url = `${baseUrl}/anime-list/`
+        try {
+            const response = await services.fetchService(url, res)
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data)
+                const element = $("#abtext")
+                let anime_list = []
+                let title, endpoint
+    
+                element.find(".jdlbar").each((index, el) => {
+                    title = $(el).find("a").text() || null
+                    endpoint = $(el).find("a").attr("href").replace(`${baseUrl}/anime/`, "")
+    
+                    anime_list.push({
+                        title,
+                        endpoint
+                    })
+                })
+    
+                // filter null title
+                const datas = anime_list.filter((value) => value.title !== null)
+    
+                return res.status(200).json({
+                    status: true,
+                    message: "success",
+                    anime_list: datas
+                })
+            }
+            return res.send({
+                message: response.status,
+                anime_list: [],
+            });
+        } catch (error) {
+            console.log(error);
+            res.send({
+                status: false,
+                message: error,
+                anime_list: [],
+            });
+        }
+    },
+    getAnimeDetail: async (req, res) => {
+        const endpoint = req.params.endpoint
+        let url = `${baseUrl}/anime/${endpoint}/`
+    
+        try {
+            const response = await services.fetchService(url, res)
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data)
+                const infoElement = $(".fotoanime")
+                const episodeElement = $(".episodelist")
+                let anime_detail = {}
+                let episode_list = []
+                let thumb, sinopsis = [], detail = [], episode_title, episode_endpoint, episode_date, title
+    
+                infoElement.each((index, el) => {
+                    thumb = $(el).find("img").attr("src")
+                    $(el).find(".sinopc > p").each((index, el) => {
+                        sinopsis.push($(el).text())
+                    })
+                    $(el).find(".infozingle >  p").each((index, el) => {
+                        detail.push($(el).text())
+                    })
+    
+                    anime_detail.thumb = thumb
+                    anime_detail.sinopsis = sinopsis
+                    anime_detail.detail = detail
+                })
+    
+                title = $(".jdlrx > h1").text()
+                anime_detail.title = title
+    
+                episodeElement.find("li").each((index, el) => {
+                    episode_title = $(el).find("span > a").text()
+                    episode_endpoint = $(el).find("span > a").attr("href").replace(`${baseUrl}/episode/`, "").replace(`${baseUrl}/batch/`, "").replace(`${baseUrl}/lengkap/`, "").replace("/", "")
+                    episode_date = $(el).find(".zeebr").text()
+    
+                    episode_list.push({
+                        episode_title,
+                        episode_endpoint,
+                        episode_date
+                    })
+                })
+    
+                return res.status(200).json({
+                    status: true,
+                    message: "success",
+                    anime_detail,
+                    episode_list,
+                    endpoint
+                })
+            }
+            res.send({
+                message: response.status,
+                anime_detail: [],
+                episode_list: []
+            });
+        } catch (error) {
+            console.log(error);
+            res.send({
+                status: false,
+                message: error,
+                anime_detail: [],
+                episode_list: []
+            });
+        }
+    },
+    getEmbedByContent: async(req, res) => {
+        try {
+            let nonce = await episodeHelper.getNonce();
+            let content = req.params.content 
 
-      return res.status(200).json({ status: true, message: "success", anime_list });
-    } catch (error) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: error.message, anime_list: [] });
+            const html_streaming = await episodeHelper.getUrlAjax(content, nonce)
+            const parse = cheerio.load(html_streaming)
+            const link = parse('iframe').attr('src')
+            const obj = {};
+            obj.streaming_url = link
+
+            res.send(obj);
+        } catch (err) {
+            console.log(err);
+            res.send(err)
+        }
+    },
+    getAnimeEpisode: async (req, res) => {
+        const endpoint = req.params.endpoint;
+        const url = `${baseUrl}/episode/${endpoint}`;
+
+        try {
+            const response = await services.fetchService(url, res);
+            const $ = cheerio.load(response.data);
+            const streamElement = $("#lightsVideo").find("#embed_holder");
+            const obj = {};
+            obj.title = $(".venutama > h1").text();
+            obj.baseUrl = url;
+            obj.id = url.replace(url.baseUrl, "");
+            obj.streamLink = streamElement.find(".responsive-embed-stream > iframe").attr("src");
+            obj.relative = []
+            let link_ref, title_ref
+            $(".flir > a").each((index, el) => {
+                title_ref = $(el).text()
+                link_ref = $(el).attr("href").replace(`${baseUrl}/anime/`, "").replace(`${baseUrl}/episode/`, "").replace("/", "")
+    
+                obj.relative.push({
+                    title_ref,
+                    link_ref
+                })
+            })
+            
+            obj.list_episode = []
+            let list_episode_title, list_episode_endpoint
+            $("#selectcog > option").each((index, el) => {
+                list_episode_title = $(el).text()
+                list_episode_endpoint = $(el).attr("value").replace(`${baseUrl}/episode/`, "").replace("/", "")
+                obj.list_episode.push({
+                    list_episode_title,
+                    list_episode_endpoint
+                })
+            })
+            obj.list_episode.shift()
+            const streamLinkResponse = streamElement.find("iframe").attr("src");
+            obj.link_stream_response = await episodeHelper.get(streamLinkResponse);
+           
+            
+            let streaming1 = [];
+            let streaming2 = [];
+            let streaming3 = [];
+
+            $('#embed_holder > div.mirrorstream > ul.m360p > li').each((k, v) => {               
+                let driver = $(v).text()
+
+                streaming1.push({
+                    driver: driver,
+                    link: "/api/v1/streaming/" + $(v).find('a').data().content
+                });
+            })
+
+
+            $('.mirrorstream > .m480p > li').each(async(k, v) => {               
+                let driver = $(v).text()
+
+                streaming2.push({
+                    driver: driver,
+                    link: "/api/v1/streaming/" + $(v).find('a').data().content
+                });
+            })
+
+            $('.mirrorstream > .m720p > li').each(async(k, v) => {               
+                let driver = $(v).text()
+
+                streaming3.push({
+                    driver: driver,
+                    link: "/api/v1/streaming/" + $(v).find('a').data().content
+                });
+            })
+
+            obj.mirror_embed1 = { quality: '360p', straming: streaming1 };
+            obj.mirror_embed2 = { quality: '480p', straming: streaming2 };
+            obj.mirror_embed3 = { quality: '720p', straming: streaming3 };
+
+            let low_quality;
+            let medium_quality;
+            let high_quality;
+
+            if ($('#venkonten > div.venser > div.venutama > div.download > ul > li:nth-child(1)').text() === '') {
+                low_quality = episodeHelper.notFoundQualityHandler(response.data, 0)
+                medium_quality = episodeHelper.notFoundQualityHandler(response.data, 1)
+                high_quality = episodeHelper.notFoundQualityHandler(response.data, 2)
+            } else {
+                low_quality = episodeHelper.epsQualityFunction(0, response.data);
+                medium_quality = episodeHelper.epsQualityFunction(1, response.data);
+                high_quality = episodeHelper.epsQualityFunction(2, response.data);
+            }
+            obj.quality = { low_quality, medium_quality, high_quality };
+            res.send(obj);
+        } catch (err) {
+            console.log(err);
+        }
+    },
+    getBatchLink: async (req, res) => {
+        const endpoint = req.params.endpoint;
+        const fullUrl = `${baseUrl}/batch/${endpoint}`;
+        console.log(fullUrl);
+        try {
+            const response = await services.fetchService(fullUrl, res)
+            const $ = cheerio.load(response.data);
+            const batch = {};
+            batch.title = $(".batchlink > h4").text();
+            batch.status = "success";
+            batch.baseUrl = fullUrl;
+            let low_quality = episodeHelper.batchQualityFunction(0, response.data);
+            let medium_quality = episodeHelper.batchQualityFunction(1, response.data);
+            let high_quality = episodeHelper.batchQualityFunction(2, response.data);
+            batch.download_list = { low_quality, medium_quality, high_quality };
+            res.send({
+                status: true,
+                message: "succes",
+                batch
+            });
+        } catch (error) {
+            console.log(error)
+        }
+    },
+    getGenreList: async (req, res) => {
+        const url = `${baseUrl}/genre-list/`
+        try {
+            const response = await services.fetchService(url, res)
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data)
+                let genres = [], genre, endpoint
+                $('.genres').find("a").each((index, el) => {
+                    genre = $(el).text()
+                    endpoint = $(el).attr('href').replace("/genres/", "").replace("/", "")
+        
+                    genres.push({
+                        genre,
+                        endpoint
+                    })
+                })
+                return res.status(200).json({
+                    status: true,
+                    message: 'success',
+                    genres
+                })
+            }
+            res.send({
+                message: response.status,
+                genres: []
+            })
+        } catch (error) {
+            console.log(error);
+            res.send({
+                status: false,
+                message: error,
+                genres: []
+            });
+        }
+    },
+    getGenrePage: async (req, res) => {
+        const genre = req.params.genre
+        const page = req.params.page
+        const url = page === 1 ? `${baseUrl}/genres/${genre}` : `${baseUrl}/genres/${genre}/page/${page}`
+        
+        try {
+            const response = await services.fetchService(url, res)
+    
+            if (response.status === 200) {
+                const $ = cheerio.load(response.data)
+                let genreAnime = [], title, link, studio, episode, rating, thumb, season, sinopsis, genre
+                $('.col-anime-con').each((index, el) => {
+                    title = $(el).find(".col-anime-title > a").text()
+                    link = $(el).find(".col-anime-title > a").attr("href").replace(`${baseUrl}/anime/`, "")
+                    studio = $(el).find(".col-anime-studio").text()
+                    episode = $(el).find(".col-anime-eps").text()
+                    rating = $(el).find(".col-anime-rating").text() || null
+                    thumb = $(el).find(".col-anime-cover > img").attr("src")
+                    season = $(el).find(".col-anime-date").text()
+                    sinopsis = $(el).find(".col-synopsis").text()
+                    genre = $(el).find(".col-anime-genre").text().trim().split(",")
+    
+                    genreAnime.push({
+                        title,
+                        link,
+                        studio,
+                        episode,
+                        rating,
+                        thumb,
+                        genre,
+                        sinopsis
+                    })
+                })
+                return res.status(200).json({
+                    status: true,
+                    message: "success",
+                    genreAnime
+                })
+            }
+            return res.send({
+                message: response.status,
+                genreAnime: []
+            })
+        } catch (error) {
+            console.log(error)
+            res.send({
+                status: false,
+                message: error,
+                genreAnime: []
+            })
+        }
     }
-  },
+}
 
-  // GET /api/v1/detail/:endpoint
-  getAnimeDetail: async (req, res) => {
-    const endpoint = req.params.endpoint;
-    const url = `${baseUrl}/series/${endpoint}/`;
-
-    try {
-      const response = await services.fetchService(url, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const anime_detail = {};
-      const episode_list = [];
-
-      // Thumb & info
-      anime_detail.title = $(".entry-title").first().text().trim() ||
-                           $("h1.entry-title").text().trim() ||
-                           $(".infox h1").text().trim();
-      anime_detail.thumb = $(".thumb img").attr("src") ||
-                           $(".thumbook img").attr("src");
-
-      // Synopsis
-      const sinopsis = [];
-      $(".entry-content p, .synp p").each((i, el) => sinopsis.push($(el).text().trim()));
-      anime_detail.sinopsis = sinopsis;
-
-      // Detail info
-      const detail = [];
-      $(".infox .spe span, .infox span").each((i, el) => detail.push($(el).text().trim()));
-      anime_detail.detail = detail;
-
-      // Episode list — new site uses /episode/ path
-      $(".eplister ul li, .episodelist ul li").each((i, el) => {
-        const a = $(el).find("a");
-        const href = a.attr("href") || "";
-        episode_list.push({
-          episode_title: a.find(".epl-title").text().trim() || a.text().trim(),
-          episode_date: $(el).find(".epl-date").text().trim(),
-          episode_endpoint: href
-            .replace(`${baseUrl}/episode/`, "")
-            .replace(`${baseUrl}/batch/`, "")
-            .replace(/\//g, ""),
-        });
-      });
-
-      return res.status(200).json({
-        status: true,
-        message: "success",
-        anime_detail,
-        episode_list,
-        endpoint,
-      });
-    } catch (error) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: error.message, anime_detail: {}, episode_list: [] });
-    }
-  },
-
-  // GET /api/v1/episode/:endpoint
-  getAnimeEpisode: async (req, res) => {
-    const endpoint = req.params.endpoint;
-    const url = `${baseUrl}/episode/${endpoint}/`;
-
-    try {
-      const response = await services.fetchService(url, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const obj = {};
-
-      obj.title = $(".entry-title, .cat-series").first().text().trim();
-      obj.baseUrl = url;
-      obj.id = endpoint;
-
-      // Stream embed
-      obj.streamLink = $(".main-video iframe, #lightsVideo iframe, .player-embed iframe").first().attr("src") || null;
-
-      // Mirror streams
-      const streaming1 = [], streaming2 = [], streaming3 = [];
-
-      $(".mirrorstream .m360p li, ul.m360p li").each((k, v) => {
-        streaming1.push({ driver: $(v).text().trim(), link: "/api/v1/streaming/" + $(v).find("a").data()?.content });
-      });
-      $(".mirrorstream .m480p li, ul.m480p li").each((k, v) => {
-        streaming2.push({ driver: $(v).text().trim(), link: "/api/v1/streaming/" + $(v).find("a").data()?.content });
-      });
-      $(".mirrorstream .m720p li, ul.m720p li").each((k, v) => {
-        streaming3.push({ driver: $(v).text().trim(), link: "/api/v1/streaming/" + $(v).find("a").data()?.content });
-      });
-
-      obj.mirror_embed1 = { quality: "360p", streaming: streaming1 };
-      obj.mirror_embed2 = { quality: "480p", streaming: streaming2 };
-      obj.mirror_embed3 = { quality: "720p", streaming: streaming3 };
-
-      // Download links
-      const download = [];
-      $(".dlpost ul li, .download ul li").each((i, el) => {
-        const quality = $(el).find("strong").text().trim();
-        const size = $(el).find("i").text().trim();
-        const links = [];
-        $(el).find("a").each((j, a) => {
-          links.push({ host: $(a).text().trim(), link: $(a).attr("href") });
-        });
-        if (quality) download.push({ quality, size, links });
-      });
-      obj.download = download;
-
-      // Navigation
-      obj.relative = [];
-      $(".navepsingle a, .flir a").each((i, el) => {
-        const href = $(el).attr("href") || "";
-        obj.relative.push({
-          title_ref: $(el).text().trim(),
-          link_ref: href.replace(`${baseUrl}/episode/`, "").replace(/\//g, ""),
-        });
-      });
-
-      res.send(obj);
-    } catch (err) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: err.message });
-    }
-  },
-
-  // GET /api/v1/batch/:endpoint
-  getBatchLink: async (req, res) => {
-    const endpoint = req.params.endpoint;
-    const fullUrl = `${baseUrl}/batch/${endpoint}/`;
-
-    try {
-      const response = await services.fetchService(fullUrl, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const batch = {};
-      batch.title = $(".entry-title").first().text().trim();
-      batch.baseUrl = fullUrl;
-
-      const download_list = [];
-      $(".batchlink ul li, .dlpost ul li").each((i, el) => {
-        const quality = $(el).find("strong").text().trim();
-        const size = $(el).find("i").text().trim();
-        const links = [];
-        $(el).find("a").each((j, a) => {
-          links.push({ host: $(a).text().trim(), link: $(a).attr("href") });
-        });
-        if (quality) download_list.push({ quality, size, links });
-      });
-      batch.download_list = download_list;
-
-      res.send({ status: true, message: "success", batch });
-    } catch (error) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: error.message });
-    }
-  },
-
-  // GET /api/v1/genres
-  getGenreList: async (req, res) => {
-    const url = `${baseUrl}/genre-list/`;
-
-    try {
-      const response = await services.fetchService(url, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const genres = [];
-
-      // New structure: <li><a href="/genres/action/"><span class="name">Action</span><span class="count">259</span></a></li>
-      $(".postbody li a, .genrelist li a").each((i, el) => {
-        const href = $(el).attr("href") || "";
-        if (!href.includes("/genres/")) return;
-        genres.push({
-          genre: $(el).find(".name").text().trim() || $(el).text().trim(),
-          count: $(el).find(".count").text().trim(),
-          endpoint: href.replace(`${baseUrl}/genres/`, "").replace(/\//g, ""),
-        });
-      });
-
-      return res.status(200).json({ status: true, message: "success", genres });
-    } catch (error) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: error.message, genres: [] });
-    }
-  },
-
-  // GET /api/v1/genres/:genre/:page
-  getGenrePage: async (req, res) => {
-    const genre = req.params.genre;
-    const page = req.params.page;
-    const url =
-      page == 1
-        ? `${baseUrl}/genres/${genre}/`
-        : `${baseUrl}/genres/${genre}/page/${page}/`;
-
-    try {
-      const response = await services.fetchService(url, res);
-      if (!response || res.headersSent) return;
-
-      const $ = cheerio.load(response.data);
-      const genreAnime = [];
-
-      $(".listupd article.bs").each((i, el) => {
-        const href = $(el).find("a").attr("href") || "";
-        genreAnime.push({
-          title: $(el).find(".tt h2").text().trim() || $(el).find("a").attr("title"),
-          thumb: $(el).find("img").attr("src"),
-          endpoint: href.replace(`${baseUrl}/series/`, "").replace(/\//g, ""),
-        });
-      });
-
-      return res.status(200).json({ status: true, message: "success", genreAnime });
-    } catch (error) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: error.message, genreAnime: [] });
-    }
-  },
-
-  // GET /api/v1/streaming/:content
-  getEmbedByContent: async (req, res) => {
-    try {
-      const nonce = await episodeHelper.getNonce();
-      const content = req.params.content;
-      const html_streaming = await episodeHelper.getUrlAjax(content, nonce);
-      if (!html_streaming) return res.status(500).json({ status: false, message: "Failed to get stream" });
-
-      const $ = cheerio.load(html_streaming);
-      const link = $("iframe").attr("src");
-      res.send({ streaming_url: link || null });
-    } catch (err) {
-      if (!res.headersSent)
-        res.status(500).json({ status: false, message: err.message });
-    }
-  },
-};
-
-module.exports = Services;
+module.exports = Services
