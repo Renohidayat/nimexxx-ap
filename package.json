@@ -21,7 +21,7 @@
     "express": "^4.17.1",
     "node-fetch": "^2.7.0",
     "nodemon": "^2.0.20",
-    "puppeteer-core": "^24.14.0",
+    "puppeteer-core": "^10.4.0",
     "qs": "^6.11.0"
   }
 }
