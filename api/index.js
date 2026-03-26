@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const serverless = require("serverless-http");
 
-// 🔥 FIX atob untuk Node.js (penting!)
+// 🔥 FIX atob untuk Node.js
 global.atob = (str) => Buffer.from(str, "base64").toString("utf-8");
 
 const app = express();
@@ -13,15 +13,9 @@ app.use(express.json());
 
 // import routes
 const route = require("../src/router/route");
-app.use("/", route);
 
-// test endpoint (biar ga 404 root)
-app.get("/", (req, res) => {
-  res.json({
-    status: true,
-    message: "API nimexxx-ap jalan 🚀",
-  });
-});
+// mount semua route di /api
+app.use("/api", route);
 
 // ❌ JANGAN ADA app.listen()
 
