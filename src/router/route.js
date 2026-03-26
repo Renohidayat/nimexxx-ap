@@ -1,80 +1,55 @@
 const express = require("express");
 const router = express.Router();
 const Services = require("../controller/services");
+const fetch = require("node-fetch");
 
-// =====================
-// ROOT (FIX: wajib return)
-// =====================
+// Root endpoint info
 router.get("/", (req, res) => {
     console.log("Root endpoint accessed");
-    return res.json({
-        status: true,
-        message: "API nimexxx-ap jalan 🚀",
-        endpoints: {
-            ongoing: "/api/v1/ongoing/:page",
-            completed: "/api/v1/completed/:page",
-            search: "/api/v1/search/:q",
-            animeList: "/api/v1/anime-list",
-            detail: "/api/v1/detail/:endpoint",
-            episode: "/api/v1/episode/:endpoint",
-            batch: "/api/v1/batch/:endpoint",
-            genres: "/api/v1/genres",
-            genrePage: "/api/v1/genres/:genre/:page",
-            streaming: "/api/v1/streaming/:content"
+    res.send({
+        message: "API is running",
+        endpoint: {
+            getOngoingAnime: "/api/v1/ongoing/:page",
+            getCompletedAnime: "/api/v1/completed/:page",
+            getAnimeSearch: "/api/v1/search/:q",
+            getAnimeList: "/api/v1/anime-list",
+            getAnimeDetail: "/api/v1/detail/:endpoint",
+            getAnimeEpisode: "/api/v1/episode/:endpoint",
+            getBatchLink: "/api/v1/batch/:endpoint",
+            getGenreList: "/api/v1/genres",
+            getGenrePage: "/api/v1/genres/:genre/:page",
+            proxyImage: "/api/v1/proxy-image?url={image_url}"
         }
     });
 });
 
-// =====================
-// API ROUTES (FIX: TANPA /api prefix)
-// =====================
-router.get("/v1/ongoing/:page", Services.getOngoing);
-router.get("/v1/completed/:page", Services.getCompleted);
-router.get("/v1/search/:q", Services.getSearch);
-router.get("/v1/anime-list", Services.getAnimeList);
-router.get("/v1/detail/:endpoint", Services.getAnimeDetail);
-router.get("/v1/episode/:endpoint", Services.getAnimeEpisode);
-router.get("/v1/batch/:endpoint", Services.getBatchLink);
-router.get("/v1/genres", Services.getGenreList);
-router.get("/v1/genres/:genre/:page", Services.getGenrePage);
-router.get("/v1/streaming/:content", Services.getEmbedByContent);
-
-// =====================
-// PROXY IMAGE (FIX STREAM)
-// =====================
-router.get("/v1/proxy-image", async (req, res) => {
+// Proxy image
+router.get("/api/v1/proxy-image", async (req, res) => {
     try {
         const imageUrl = req.query.url;
-        if (!imageUrl) {
-            return res.status(400).json({ message: "Missing url param" });
-        }
+        if (!imageUrl) return res.status(400).send("Missing url param");
 
         const response = await fetch(imageUrl);
+        if (!response.ok) return res.status(response.status).send("Failed to fetch image");
 
-        if (!response.ok) {
-            return res.status(response.status).json({
-                message: "Failed to fetch image"
-            });
-        }
-
-        res.setHeader("Content-Type", response.headers.get("content-type"));
-        return response.body.pipe(res);
+        res.set("Content-Type", response.headers.get("content-type"));
+        response.body.pipe(res);
     } catch (error) {
-        console.error("Proxy error:", error.message);
-        return res.status(500).json({
-            message: "Internal server error"
-        });
+        console.error("Error in proxy-image:", error.message);
+        res.status(500).send("Internal server error");
     }
 });
 
-// =====================
-// 404 HANDLER (PENTING BIAR GA LOADING)
-// =====================
-router.use((req, res) => {
-    return res.status(404).json({
-        status: false,
-        message: "Route not found"
-    });
-});
+// API routes
+router.get("/api/v1/ongoing/:page", Services.getOngoing);
+router.get("/api/v1/completed/:page", Services.getCompleted);
+router.get("/api/v1/search/:q", Services.getSearch);
+router.get("/api/v1/anime-list", Services.getAnimeList);
+router.get("/api/v1/detail/:endpoint", Services.getAnimeDetail);
+router.get("/api/v1/episode/:endpoint", Services.getAnimeEpisode);
+router.get("/api/v1/batch/:endpoint", Services.getBatchLink);
+router.get("/api/v1/genres", Services.getGenreList);
+router.get("/api/v1/genres/:genre/:page", Services.getGenrePage);
+router.get("/api/v1/streaming/:content", Services.getEmbedByContent);
 
 module.exports = router;
